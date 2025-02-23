@@ -1,13 +1,17 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     kotlin("plugin.serialization") version "2.1.0"
+
 }
 
 android {
     namespace = "dev.jefrien.mathjoytv"
     compileSdk = 35
+
 
     defaultConfig {
         applicationId = "dev.jefrien.mathjoytv"
@@ -15,6 +19,10 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+
+        val properties = Properties()
+        properties.load(project.rootProject.file("local.properties").inputStream())
+        buildConfigField("String", "api_key", properties.getProperty("api_key"))
 
     }
 
@@ -36,6 +44,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -64,6 +73,6 @@ dependencies {
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
     implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
-
+    implementation(libs.kotlinx.serialization.json.v180)
 
 }

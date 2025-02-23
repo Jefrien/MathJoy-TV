@@ -1,12 +1,13 @@
 package dev.jefrien.mathjoytv
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -14,38 +15,48 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.ContextCompat.getString
+import androidx.core.content.res.TypedArrayUtils.getText
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
+import dev.jefrien.mathjoytv.models.MultiplicationRequest
+import dev.jefrien.mathjoytv.models.ApiResponse
 import dev.jefrien.mathjoytv.ui.theme.MathJoyTVTheme
-import io.ktor.client.HttpClient
+import dev.jefrien.mathjoytv.ui.theme.TealDark
+import dev.jefrien.mathjoytv.ui.theme.TealLight
+import dev.jefrien.mathjoytv.utils.NetworkUtils.httpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.content
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
-import io.ktor.serialization.kotlinx.json.json
-import io.ktor.utils.io.ByteReadChannel
-import io.ktor.utils.io.InternalAPI
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+
+private val apiKey = BuildConfig.api_key;
 
 class Multiply : ComponentActivity() {
     @OptIn(ExperimentalTvMaterial3Api::class)
@@ -64,46 +75,22 @@ class Multiply : ComponentActivity() {
     }
 }
 
-@Serializable
-data class MultiplicationRequest(
-    val action: String,
-    val difficulty: String,
-    val quantity: Int,
-    val table: String,
-    val password: String
-)
-
-data class Exercise(
-    val exercise: String,
-    val answers: List<String>,
-    val correct: String
-)
-
-data class MultiplicationResponse(
-    val data: List<Exercise>
-)
-
-
-@OptIn(InternalAPI::class)
-suspend fun getRandomExercises(table: Int): MultiplicationResponse {
-    val client = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            json()
+suspend fun getRandomExercises(table: Int): ApiResponse {
+    val response: HttpResponse =
+        httpClient.post(urlString = "https://jefrien-bot.jefrienalvizures.workers.dev/") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                MultiplicationRequest(
+                    action = "generateMultiplications",
+                    difficulty = "faciles de 2 cifras",
+                    quantity = 10,
+                    table = table.toString(),
+                    password = apiKey
+                )
+            )
         }
-    }
-    val response: HttpResponse = client.post(urlString = "https://jefrien-bot.jefrienalvizures.workers.dev/") {
-        contentType(ContentType.Application.Json)
-        setBody(MultiplicationRequest(
-            action = "generateMultiplications",
-            difficulty = "faciles de 2 cifras",
-            quantity = 10,
-            table = table.toString(),
-            password = "passhere"
-        ))
-    }
 
-    val result: MultiplicationResponse = response.body()
-
+    val result: ApiResponse = response.body()
     return result
 }
 
@@ -112,14 +99,17 @@ suspend fun getRandomExercises(table: Int): MultiplicationResponse {
 @Composable
 fun ButtonTable(text: String = "Button", onClick: () -> Unit) {
     Button(
-        onClick, modifier = Modifier
+        onClick,
+        modifier = Modifier
             .height(150.dp)
             .width(150.dp),
         shape = ButtonDefaults.shape(
             shape = RoundedCornerShape(0.dp)
         ),
         colors = ButtonDefaults.colors(
-            focusedContainerColor = Color.Blue,
+            containerColor = TealLight,
+            contentColor = Color.Black,
+            focusedContainerColor = TealDark,
             focusedContentColor = Color.White
         ),
     ) {
@@ -134,15 +124,52 @@ fun ButtonTable(text: String = "Button", onClick: () -> Unit) {
     }
 }
 
-@Preview
+
+
+
 @Composable
-fun ButtonTablePreview() {
-    ButtonTable("1", onClick = {})
+fun LoadingDialog(onDismiss: () -> Unit) {
+    Dialog (
+        onDismissRequest = onDismiss,
+        DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+    ) {
+        Box(
+            contentAlignment= Alignment.Center,
+            modifier = Modifier
+                .width(400.dp)
+                .height(200.dp)
+                .background(TealLight, shape = RoundedCornerShape(8.dp))
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxSize().padding(10.dp)
+            ) {
+                Text("Creando tus ejercicios, espera por favor",
+                    fontSize = 20.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 20.dp)
+                )
+                CircularProgressIndicator()
+            }
+        }
+    }
 }
+
+@Composable
+@Preview
+fun DialogPreview() {
+    LoadingDialog({})
+}
+
+
 
 //@Preview(device = "spec:width=1920dp,height=1080dp,dpi=160")
 @Composable
 fun MultiplyApp() {
+    var showDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -161,13 +188,22 @@ fun MultiplyApp() {
             for (i in 1.rangeTo(12)) {
                 item {
                     ButtonTable(i.toString(), onClick = {
+                        showDialog = true
                         CoroutineScope(Dispatchers.IO).launch {
                             val result = getRandomExercises(i)
-                            println(result)
+                            showDialog = false
+                            val intent = Intent(context, Exam::class.java)
+                            intent.putExtra("exercises", Json.encodeToString(result.data))
+                            intent.putExtra("title", "de la tabla del $i")
+                            context.startActivity(intent)
                         }
                     })
                 }
             }
+        }
+
+        if (showDialog) {
+            LoadingDialog({ showDialog = false })
         }
     }
 }

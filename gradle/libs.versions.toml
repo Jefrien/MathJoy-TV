@@ -5,6 +5,7 @@ coreKtx = "1.10.1"
 appcompat = "1.6.1"
 composeBom = "2024.04.01"
 kotlinxSerializationJson = "1.9.0"
+kotlinxSerializationJsonVersion = "1.8.0"
 tvFoundation = "1.0.0-alpha07"
 tvMaterial = "1.0.0-alpha07"
 lifecycleRuntimeKtx = "2.6.1"
@@ -26,6 +27,7 @@ androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecyc
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+kotlinx-serialization-json-v180 = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJsonVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

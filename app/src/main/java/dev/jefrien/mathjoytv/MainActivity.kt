@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.tv.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -27,8 +28,11 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
+import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.Surface
 import dev.jefrien.mathjoytv.ui.theme.MathJoyTVTheme
+import dev.jefrien.mathjoytv.ui.theme.TealDark
+import dev.jefrien.mathjoytv.ui.theme.TealLight
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalTvMaterial3Api::class)
@@ -68,7 +72,9 @@ fun ButtonType(text: String = "Button", iconId: Int = R.drawable.plus, onClick: 
             shape = RoundedCornerShape(0.dp)
         ),
         colors = ButtonDefaults.colors(
-            focusedContainerColor = Color.Blue,
+            containerColor = TealLight,
+            contentColor = Color.Black,
+            focusedContainerColor = TealDark,
             focusedContentColor = Color.White
         ),
     ) {
@@ -77,13 +83,14 @@ fun ButtonType(text: String = "Button", iconId: Int = R.drawable.plus, onClick: 
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Image(
+            Icon(
                 painter = painterResource(id = iconId),
                 contentDescription = text,
                 modifier = Modifier
                     .width(64.dp)
                     .height(64.dp)
-                    .padding(end = 10.dp, start = 10.dp)
+                    .padding(end = 10.dp, start = 10.dp),
+                tint = LocalContentColor.current
             )
             Text(text)
         }
