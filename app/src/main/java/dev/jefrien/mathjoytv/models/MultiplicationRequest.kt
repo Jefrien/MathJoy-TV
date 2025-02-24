@@ -8,5 +8,6 @@ data class MultiplicationRequest(
     val difficulty: String,
     val quantity: Int,
     val table: String,
+    val history: String = "",
     val password: String
 )

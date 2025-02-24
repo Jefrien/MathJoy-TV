@@ -14,7 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.tv.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -97,10 +100,27 @@ fun ButtonType(text: String = "Button", iconId: Int = R.drawable.plus, onClick: 
     }
 }
 
+@OptIn(ExperimentalTvMaterial3Api::class)
 @Preview(device = "spec:width=1920dp,height=1080dp,dpi=160")
 @Composable
 fun App() {
     val context = LocalContext.current
+    Button (
+        onClick = {
+            context.startActivity(Intent(context, MainActivity::class.java))
+        },
+        modifier = Modifier.padding(16.dp),
+        colors = ButtonDefaults.colors(
+            contentColor = Color.White,
+            containerColor = Color.Transparent
+        )
+    ) {
+        Icon(
+            Icons.Default.Settings,
+            contentDescription = "Ajustes de la aplicación",
+            tint = LocalContentColor.current
+        )
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()

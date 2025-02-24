@@ -49,6 +49,7 @@ android {
 }
 
 val ktorVersion: String by project
+val room_version = "2.6.1"
 
 dependencies {
 
@@ -63,6 +64,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.preference)
+    implementation(libs.material)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
@@ -74,5 +77,10 @@ dependencies {
     implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation(libs.kotlinx.serialization.json.v180)
+
+    // room
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    annotationProcessor("androidx.room:room-compiler:$room_version")
 
 }

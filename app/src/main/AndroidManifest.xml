@@ -19,6 +19,20 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MathJoyTV">
         <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:label="@string/title_activity_settings" />
+        <activity
+            android:name=".Settings"
+            android:exported="false"
+            android:label="@string/title_activity_settings"
+            android:theme="@style/Theme.MathJoyTV" />
+        <activity
+            android:name=".Results"
+            android:exported="false"
+            android:label="@string/title_activity_results"
+            android:theme="@style/Theme.MathJoyTV" />
+        <activity
             android:name=".Exam"
             android:exported="false"
             android:label="@string/title_activity_examn"

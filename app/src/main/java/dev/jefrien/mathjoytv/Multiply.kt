@@ -2,6 +2,7 @@ package dev.jefrien.mathjoytv
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -34,11 +35,14 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat.getString
 import androidx.core.content.res.TypedArrayUtils.getText
+import androidx.room.Room
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
+import dev.jefrien.mathjoytv.db.AppDatabase
+import dev.jefrien.mathjoytv.db.entities.ExamEntity
 import dev.jefrien.mathjoytv.models.MultiplicationRequest
 import dev.jefrien.mathjoytv.models.ApiResponse
 import dev.jefrien.mathjoytv.ui.theme.MathJoyTVTheme
@@ -75,16 +79,31 @@ class Multiply : ComponentActivity() {
     }
 }
 
-suspend fun getRandomExercises(table: Int): ApiResponse {
+suspend fun getRandomExercises(table: Int, history: List<ExamEntity>): ApiResponse {
+
+    val historyList: MutableList<String> = mutableListOf()
+    for(h in history) {
+        val itemResponses: List<String> = Json.decodeFromString(h.responses.toString())
+        for(item in itemResponses) {
+            historyList.add(item)
+        }
+    }
+
+    val responses = historyList.joinToString(separator = ", ")
+
     val response: HttpResponse =
         httpClient.post(urlString = "https://jefrien-bot.jefrienalvizures.workers.dev/") {
             contentType(ContentType.Application.Json)
+
+            Log.e("API REQUEST", "Responses: $responses")
+
             setBody(
                 MultiplicationRequest(
                     action = "generateMultiplications",
                     difficulty = "faciles de 2 cifras",
                     quantity = 10,
                     table = table.toString(),
+                    history = responses,
                     password = apiKey
                 )
             )
@@ -139,6 +158,7 @@ fun LoadingDialog(onDismiss: () -> Unit) {
                 .width(400.dp)
                 .height(200.dp)
                 .background(TealLight, shape = RoundedCornerShape(8.dp))
+                .padding(start = 15.dp, end = 15.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -170,6 +190,13 @@ fun MultiplyApp() {
     var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
+    val db = Room.databaseBuilder(
+        context,
+        AppDatabase::class.java, "mathjoy_db"
+    ).build()
+
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -190,7 +217,11 @@ fun MultiplyApp() {
                     ButtonTable(i.toString(), onClick = {
                         showDialog = true
                         CoroutineScope(Dispatchers.IO).launch {
-                            val result = getRandomExercises(i)
+
+                            val examDao = db.examDao()
+                            val history = examDao.loadLastThree()
+
+                            val result = getRandomExercises(i, history)
                             showDialog = false
                             val intent = Intent(context, Exam::class.java)
                             intent.putExtra("exercises", Json.encodeToString(result.data))

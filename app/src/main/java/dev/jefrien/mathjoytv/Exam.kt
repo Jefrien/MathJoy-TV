@@ -2,8 +2,6 @@ package dev.jefrien.mathjoytv
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -25,6 +23,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.tv.material3.Button
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -33,19 +32,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.room.Room
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
+import dev.jefrien.mathjoytv.db.AppDatabase
+import dev.jefrien.mathjoytv.db.entities.ExamEntity
 import dev.jefrien.mathjoytv.models.ExamResponse
 import dev.jefrien.mathjoytv.models.Exercise
 import dev.jefrien.mathjoytv.ui.theme.MathJoyTVTheme
 import dev.jefrien.mathjoytv.ui.theme.TealDark
 import dev.jefrien.mathjoytv.ui.theme.TealDarker
 import dev.jefrien.mathjoytv.ui.theme.TealLight
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
 class Exam : ComponentActivity() {
@@ -158,47 +162,58 @@ fun RowApp(exercise: Exercise, onAnswerClick: (iem: String) -> Unit) {
     }
 }
 
-@Preview(device = "spec:width=800px,height=800px,dpi=440")
-@Composable
-fun PreviewExerciseView() {
-    ExerciseView("4 x 6")
-}
-
-@Preview(device = "spec:width=800px,height=800px,dpi=440")
-@Composable
-fun PreviewOptionsView() {
-    val list: List<String> = listOf("4", "8", "6", "1")
-    OptionsView(list, {})
-}
-
 @Composable
 fun ExamApp(exercises: List<Exercise>, title: String) {
     var context = LocalContext.current
     var index by remember { mutableStateOf(0) }
     var exercise by remember { mutableStateOf(exercises.get(index)) }
-    val responses: List<ExamResponse> = listOf()
-    var progress by remember {  mutableStateOf(0f) }
+    val responses = remember { mutableStateListOf<ExamResponse>() }
+    var progress by remember { mutableStateOf(0f) }
+
+    fun saveResponses() {
+        val db = Room.databaseBuilder(
+            context,
+            AppDatabase::class.java, "mathjoy_db"
+        ).build()
+
+        val examDao = db.examDao()
+
+
+        val responsesSimple: MutableList<String> = mutableListOf()
+        for (resp in responses) {
+            responsesSimple.add("${resp.exercise.exercise} = ${resp.response}")
+        }
+        examDao.insertAll(
+            ExamEntity(
+                studentName = "Carlos",
+                responses = Json.encodeToString(responsesSimple)
+            )
+        )
+    }
 
     fun calculateProgress() {
-       val p = (index * 100) / exercises.size
-       progress = p.toFloat() / 100
+        val p = (index * 100) / exercises.size
+        progress = p.toFloat() / 100
     }
 
     fun handleOptionClick(option: String) {
-        responses.plus(
-            ExamResponse(
-                exercise = exercises.get(index),
-                response = option
-            )
+        val item = ExamResponse(
+            exercise = exercises.get(index),
+            response = option
         )
+        responses.add(item)
         index++
         calculateProgress()
 
         if (index >= exercises.size) {
-            val intent = Intent(context, Results::class.java)
-            intent.putExtra("responses", Json.encodeToString(responses))
-            context.startActivity(intent)
-            return
+
+            CoroutineScope(Dispatchers.IO).launch {
+                saveResponses()
+
+                val intent = Intent(context, Results::class.java)
+                intent.putExtra("responses", Json.encodeToString(responses.toList()))
+                context.startActivity(intent)
+            }
         } else {
 
             exercise = exercises.get(index)
